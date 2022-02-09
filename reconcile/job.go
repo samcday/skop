@@ -2,6 +2,9 @@ package reconcile
 
 import (
 	"context"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"os"
+	"sigs.k8s.io/yaml"
 
 	batchv1 "k8s.io/api/batch/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -10,6 +13,16 @@ import (
 )
 
 func Job(ctx context.Context, cs *kubernetes.Clientset, job *batchv1.Job) error {
+	if os.Getenv("DRYRUN") != "" {
+		os.Stdout.WriteString("---\n")
+		job.SetGroupVersionKind(schema.FromAPIVersionAndKind("batch/v1", "Job"))
+		b, err := yaml.Marshal(job)
+		if err != nil {
+			return err
+		}
+		_, err = os.Stdout.Write(b)
+		return err
+	}
 	client := cs.BatchV1().Jobs(job.Namespace)
 	existing, err := client.Get(ctx, job.Name, metav1.GetOptions{})
 	if err != nil {

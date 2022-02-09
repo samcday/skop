@@ -2,14 +2,27 @@ package reconcile
 
 import (
 	"context"
+	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/kubernetes"
+	"os"
+	"sigs.k8s.io/yaml"
 
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
 )
 
 func ConfigMap(ctx context.Context, cs *kubernetes.Clientset, configMap *corev1.ConfigMap) error {
+	if os.Getenv("DRYRUN") != "" {
+		os.Stdout.WriteString("---\n")
+		configMap.SetGroupVersionKind(schema.FromAPIVersionAndKind("v1", "ConfigMap"))
+		b, err := yaml.Marshal(configMap)
+		if err != nil {
+			return err
+		}
+		_, err = os.Stdout.Write(b)
+		return err
+	}
 	client := cs.CoreV1().ConfigMaps(configMap.Namespace)
 	existing, err := client.Get(ctx, configMap.Name, metav1.GetOptions{})
 	if err != nil {
