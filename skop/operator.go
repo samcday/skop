@@ -89,7 +89,7 @@ func WithReconciler(r Reconciler) Option {
 }
 
 // New constructs a new operator with the provided options.
-func New(options ...Option) *Operator {
+func New(dry bool, options ...Option) *Operator {
 	op := &Operator{
 		updates:        make(chan Resource),
 		retries:        make(chan string),
