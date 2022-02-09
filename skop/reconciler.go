@@ -9,5 +9,8 @@ type Reconciler interface {
 type ReconcilerFunc func(ctx context.Context, op *Operator, res Resource) error
 
 func (f ReconcilerFunc) Reconcile(ctx context.Context, op *Operator, res Resource) error {
+	if op.dryRun {
+		ctx = context.WithValue(ctx, "dryrun", true)
+	}
 	return f(ctx, op, res)
 }
