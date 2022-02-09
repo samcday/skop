@@ -2,6 +2,9 @@ package reconcile
 
 import (
 	"context"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"os"
+	"sigs.k8s.io/yaml"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -10,6 +13,15 @@ import (
 )
 
 func Service(ctx context.Context, cs *kubernetes.Clientset, service *corev1.Service) error {
+	if os.Getenv("DRYRUN") != "" {
+		service.SetGroupVersionKind(schema.FromAPIVersionAndKind("v1", "Service"))
+		b, err := yaml.Marshal(service)
+		if err != nil {
+			return err
+		}
+		_, err = os.Stdout.Write(b)
+		return err
+	}
 	client := cs.CoreV1().Services(service.Namespace)
 	existing, err := client.Get(ctx, service.Name, metav1.GetOptions{})
 	if err != nil {
