@@ -42,7 +42,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	op := skop.New(
+	op := skop.New(true,
 		skop.WithResource("example.com", "v1", "tests", &Test{}),
 		skop.WithConfig(config),
 		skop.WithReconciler(skop.ReconcilerFunc(reconciler)),

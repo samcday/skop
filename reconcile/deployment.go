@@ -2,6 +2,8 @@ package reconcile
 
 import (
 	"context"
+	"os"
+	"sigs.k8s.io/yaml"
 
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -10,6 +12,14 @@ import (
 )
 
 func Deployment(ctx context.Context, cs *kubernetes.Clientset, deployment *appsv1.Deployment) error {
+	if ctx.Value("dryrun") != nil {
+		b, err := yaml.Marshal(deployment)
+		if err != nil {
+			return err
+		}
+		_, err = os.Stdout.Write(b)
+		return err
+	}
 	client := cs.AppsV1().Deployments(deployment.Namespace)
 	existing, err := client.Get(ctx, deployment.Name, metav1.GetOptions{})
 	if err != nil {
