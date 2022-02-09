@@ -2,6 +2,9 @@ package reconcile
 
 import (
 	"context"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"os"
+	"sigs.k8s.io/yaml"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -10,6 +13,15 @@ import (
 )
 
 func PersistentVolumeClaim(ctx context.Context, cs *kubernetes.Clientset, pvc *corev1.PersistentVolumeClaim) error {
+	if os.Getenv("DRYRUN") != "" {
+		pvc.SetGroupVersionKind(schema.FromAPIVersionAndKind("v1", "PersistentVolumeClaim"))
+		b, err := yaml.Marshal(pvc)
+		if err != nil {
+			return err
+		}
+		_, err = os.Stdout.Write(b)
+		return err
+	}
 	client := cs.CoreV1().PersistentVolumeClaims(pvc.Namespace)
 	existing, err := client.Get(ctx, pvc.Name, metav1.GetOptions{})
 	if err != nil {

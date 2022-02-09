@@ -2,6 +2,9 @@ package reconcile
 
 import (
 	"context"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"os"
+	"sigs.k8s.io/yaml"
 
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -10,6 +13,15 @@ import (
 )
 
 func DaemonSet(ctx context.Context, cs *kubernetes.Clientset, daemonSet *appsv1.DaemonSet) error {
+	if os.Getenv("DRYRUN") != "" {
+		daemonSet.SetGroupVersionKind(schema.FromAPIVersionAndKind("apps/v1", "DaemonSet"))
+		b, err := yaml.Marshal(daemonSet)
+		if err != nil {
+			return err
+		}
+		_, err = os.Stdout.Write(b)
+		return err
+	}
 	client := cs.AppsV1().DaemonSets(daemonSet.Namespace)
 	existing, err := client.Get(ctx, daemonSet.Name, metav1.GetOptions{})
 	if err != nil {
